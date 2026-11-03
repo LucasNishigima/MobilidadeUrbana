@@ -3,14 +3,24 @@ package com.lucas.ecorota.ui.comparacao
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -109,7 +119,13 @@ fun ComparacaoConteudo(
         onComparar(origem.trim(), destino.trim())
     }
 
-    Column(modifier.fillMaxSize().padding(16.dp)) {
+    // A tela inteira rola: campos, mapa e cards
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         OutlinedTextField(
             value = origem,
             onValueChange = {
@@ -179,10 +195,34 @@ fun ComparacaoConteudo(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                LazyColumn {
-                    items(state.opcoes) { op ->
-                        CardOpcao(op, destaque = op == melhor)
-                    }
+                // Começa mostrando a rota mais sustentável; volta a ela a cada nova busca
+                var selecionado by rememberSaveable(state) {
+                    mutableStateOf(melhor?.modal ?: Modal.CARRO)
+                }
+
+                MapaRotas(
+                    origem = state.origem,
+                    destino = state.destino,
+                    opcoes = state.opcoes,
+                    selecionado = selecionado,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Text(
+                    "Toque em um card para ver a rota no mapa",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                state.opcoes.forEach { op ->
+                    CardOpcao(
+                        op = op,
+                        destaque = op == melhor,
+                        selecionado = op.modal == selecionado,
+                        onClick = { selecionado = op.modal }
+                    )
                 }
             }
         }
@@ -190,14 +230,26 @@ fun ComparacaoConteudo(
 }
 
 @Composable
-private fun CardOpcao(op: OpcaoRota, destaque: Boolean) {
+private fun CardOpcao(
+    op: OpcaoRota,
+    destaque: Boolean,
+    selecionado: Boolean,
+    onClick: () -> Unit
+) {
     val cores = if (destaque) {
         CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     } else {
         CardDefaults.cardColors()
     }
+    // A borda na cor do meio de transporte indica a rota que está no mapa
+    val borda = if (selecionado) BorderStroke(3.dp, corDoModal(op.modal)) else null
 
-    Card(colors = cores, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Card(
+        onClick = onClick,
+        colors = cores,
+        border = borda,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    ) {
         Column(Modifier.padding(12.dp)) {
             if (destaque) {
                 Text(
@@ -206,7 +258,17 @@ private fun CardOpcao(op: OpcaoRota, destaque: Boolean) {
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(op.modal.nome, style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Bolinha com a cor da rota no mapa
+                Box(
+                    Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(corDoModal(op.modal))
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(op.modal.nome, style = MaterialTheme.typography.titleMedium)
+            }
             Text("%.1f km · %d min".format(op.distanciaKm, op.minutos))
             Text("CO₂: %.2f kg".format(op.co2Kg))
             when {

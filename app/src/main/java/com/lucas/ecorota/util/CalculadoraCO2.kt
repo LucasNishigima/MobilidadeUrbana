@@ -13,12 +13,15 @@ enum class Modal(
     A_PE("A pé", "foot-walking", "routed-foot", 0.0)
 }
 
+data class Coordenada(val lat: Double, val lon: Double)
+
 data class OpcaoRota(
     val modal: Modal,
     val distanciaKm: Double,
     val minutos: Int,
     val co2Kg: Double,
-    val economiaKg: Double // CO₂ evitado em relação a fazer o trajeto de carro
+    val economiaKg: Double, // CO₂ evitado em relação a fazer o trajeto de carro
+    val trajeto: List<Coordenada> = emptyList() // desenho da rota no mapa
 )
 
 object CalculadoraCO2 {

@@ -3,6 +3,7 @@ package com.lucas.ecorota.data.repository
 import com.lucas.ecorota.data.remote.OsrmApi
 import com.lucas.ecorota.data.remote.OsrmClient
 import com.lucas.ecorota.util.CalculadoraCO2
+import com.lucas.ecorota.util.Coordenada
 import com.lucas.ecorota.util.Modal
 import com.lucas.ecorota.util.OpcaoRota
 import kotlinx.coroutines.async
@@ -38,7 +39,10 @@ class RotaRepository(private val api: OsrmApi = OsrmClient.api) {
                     distanciaKm = km,
                     minutos = (r.duration * fatorTempo / 60).toInt(),
                     co2Kg = co2,
-                    economiaKg = CalculadoraCO2.economia(co2Carro, co2)
+                    economiaKg = CalculadoraCO2.economia(co2Carro, co2),
+                    trajeto = r.geometry?.coordinates
+                        ?.map { Coordenada(lat = it[1], lon = it[0]) }
+                        .orEmpty()
                 )
             }
         }
