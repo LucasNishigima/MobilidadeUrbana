@@ -269,7 +269,7 @@ private fun CardOpcao(
                 Spacer(Modifier.width(8.dp))
                 Text(op.modal.nome, style = MaterialTheme.typography.titleMedium)
             }
-            Text("%.1f km · %d min".format(op.distanciaKm, op.minutos))
+            Text("%.1f km · %s".format(op.distanciaKm, formatarTempo(op.minutos)))
             Text("CO₂: %.2f kg".format(op.co2Kg))
             when {
                 op.modal == Modal.CARRO -> Text(
@@ -284,6 +284,14 @@ private fun CardOpcao(
             }
         }
     }
+}
+
+// 45 -> "45 min", 65 -> "1h05min", 120 -> "2h"
+private fun formatarTempo(minutos: Int): String {
+    if (minutos < 60) return "$minutos min"
+    val horas = minutos / 60
+    val resto = minutos % 60
+    return if (resto == 0) "${horas}h" else "%dh%02dmin".format(horas, resto)
 }
 
 private fun comoIr(modal: Modal) = when (modal) {
